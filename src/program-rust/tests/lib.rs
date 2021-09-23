@@ -8,7 +8,6 @@ use solana_sdk::{
     signature::Signer,
     transaction::Transaction,
 };
-use std::mem;
 
 #[tokio::test]
 async fn test_helloworld() {
@@ -24,7 +23,7 @@ async fn test_helloworld() {
         greeted_pubkey,
         Account {
             lamports: 5,
-            data: vec![0_u8; mem::size_of::<u32>()],
+            data: vec![0_u8; 4 + 4],
             owner: program_id,
             ..Account::default()
         },
@@ -48,7 +47,7 @@ async fn test_helloworld() {
     let mut transaction = Transaction::new_with_payer(
         &[Instruction::new_with_bincode(
             program_id,
-            &[0], // ignored but makes the instruction unique in the slot
+            &[1u8, 2u8, 3u8, 4u8],
             vec![AccountMeta::new(greeted_pubkey, false)],
         )],
         Some(&payer.pubkey()),
@@ -66,14 +65,14 @@ async fn test_helloworld() {
         GreetingAccount::try_from_slice(&greeted_account.data)
             .unwrap()
             .counter,
-        1
+        1 + 2 * 256 + 3 * 256 * 256 + 4 * 256 * 256 * 256
     );
 
-    // Greet again
+    // Greet again (does nothing though lol)
     let mut transaction = Transaction::new_with_payer(
         &[Instruction::new_with_bincode(
             program_id,
-            &[1], // ignored but makes the instruction unique in the slot
+            &[4u8, 3u8, 2u8, 1u8],
             vec![AccountMeta::new(greeted_pubkey, false)],
         )],
         Some(&payer.pubkey()),
@@ -91,6 +90,6 @@ async fn test_helloworld() {
         GreetingAccount::try_from_slice(&greeted_account.data)
             .unwrap()
             .counter,
-        2
+        4 + 3 * 256 + 2 * 256 * 256 + 1 * 256 * 256 * 256
     );
 }
